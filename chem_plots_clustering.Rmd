@@ -2,7 +2,7 @@
 title: "KMeans and more"
 author: "Brandon Gonzalez"
 date: "February 2, 2019"
-output: github_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
