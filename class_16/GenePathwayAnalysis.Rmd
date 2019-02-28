@@ -1,0 +1,224 @@
+---
+title: "Gene Pathway Analysis"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pathway 
+The expression data comes from GEO entry GSE37704, which is associated with the following publication:
+
+Trapnell C, Hendrickson DG, Sauvageau M, Goff L et al. “Differential analysis of gene regulation at transcript resolution with RNA-seq”. Nat Biotechnol 2013 Jan;31(1):46-53. PMID: 23222703
+
+They reported knockdown of HOX1a changes many thousands of transcript's expression levels.
+set the filenames and open
+```{r}
+metafilename <- "data/GSE37704_metadata.csv"
+datafilename <- "data/GSE37704_featurecounts.csv"
+#take a peak, meta data maps the condition and the gene ID
+colData <- read.csv(file=metafilename, row.names = 1)
+head(colData)
+```
+
+```{r}
+countData <- read.csv(file=datafilename, row.names = 1)
+head(countData)
+```
+
+We see there is a length column in *countData*, that is not needed so we can go ahead and remove it. Lets also make sure that the column names line up with the rows of the metadata
+```{r}
+countData <- as.matrix(countData[ ,-1])
+head(countData)
+```
+```{r}
+#lets make sure the conditions line up
+row.names(colData) == colnames(countData)
+#we can use all() to evaluate that everything returend was TRUE
+all(row.names(colData) == colnames(countData))
+
+#lets also see how many genes we are working with by getting the dimension of the matrix, [rows, colms]
+dim(countData)
+```
+Remove genes that have 0 count data
+```{r}
+#lets take a peak again
+head(countData)
+#lets get the indices that are NOT 0
+inds <- rowSums(countData) != 0
+countData = countData[inds, ]
+
+```
+
+```{r}
+#lets check the head again
+head(countData)
+dim(countData)
+head(colData)
+```
+
+## Lets run DESeq2
+
+```{r deseq_load, message=FALSE}
+library(DESeq2)
+
+```
+
+```{r}
+dds = DESeqDataSetFromMatrix(countData=countData,
+                             colData=colData,
+                             design=~condition)
+```
+
+
+```{r}
+#dds = DESeqDataSetFromMatrix(countData=countData, colData=colData, design =~conditon)
+```
+
+```{r}
+dds = DESeq(dds)
+```
+```{r}
+dds
+```
+
+```{r}
+res = results(dds, contrast = c("condition","hoxa1_kd","control_sirna"))
+summary(res)
+```
+
+### Volcano Plot
+
+```{r}
+plot(res$log2FoldChange, -log(res$padj))
+```
+
+lets color this plot
+```{r}
+#repeat gray color for all samples which is equal to nrows of the result
+mycols <- rep("gray", nrow(res))
+#color the genes where fold change is greater than 2
+mycols[abs(res$log2FoldChange) > 2] <- "red"
+
+#color the genes where the pvalue is less than 0.01 AND l2fc is greater than 2
+mycols[abs(res$log2FoldChange) > 2 & (res$padj < 0.01)] <- "Blue"
+
+```
+```{r}
+plot(res$log2FoldChange, -log(res$padj), col = mycols)
+```
+
+Blue genes are of interest for pathway analysis
+lets select those and write them to disk. But first we should annotate them.
+
+## Annotating genes
+
+```{r eval=FALSE}
+biocLite("AnnotationDbi")
+
+```
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+columns(org.Hs.eg.db)
+```
+
+We are going to use mapIds() from annotationDbi 
+```{r}
+res$symbol = mapIds(org.Hs.eg.db, keys = rownames(res), 
+                    keytype = "ENSEMBL", column = "SYMBOL", 
+                    multiVals = "first")
+head(res$symbol)
+```
+Lets do this with entrez and the gene name
+```{r}
+res$entrez = mapIds(org.Hs.eg.db, keys = rownames(res), 
+                    keytype = "ENSEMBL", column = "ENTREZID", 
+                    multiVals = "first")
+res$name = mapIds(org.Hs.eg.db, keys = rownames(res), 
+                    keytype = "ENSEMBL", column = "GENENAME", 
+                    multiVals = "first")
+```
+```{r}
+head(res)
+```
+
+#### Finally, lets write the results based on the Pvalue
+```{r}
+res = res[order(res$pvalue), ]
+write.csv(res, file="deseq_results.csv")
+``` 
+
+## Pathway Analysis
+We will be using gage package for pathway analysis
+```{r eval=FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite( c("pathview", "gage", "gageData") )
+```
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+```
+```{r}
+#load the pathway data up
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+```
+```{r}
+#get the human subset(hs) of only signaling pathways (sigmet)
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+head(kegg.sets.hs,3)
+```
+```{r}
+#the main gage() function requires a named vector of fold changes, where the names of the values are the Entrez gene IDs.
+foldchanges = res$log2FoldChange
+#name the foldchanges with the genes, kegg only taks entrez so we have.
+names(foldchanges) <- res$entrez
+head(foldchanges)
+```
+gage() takes a vector of named logfoldchanges and a set of pathways you want to compare over 
+```{r}
+keggRes <- gage(foldchanges, gsets = kegg.sets.hs)
+```
+
+```{r}
+attributes(keggRes)
+head(keggRes$less)
+```
+Pathway is the first column in the matrix of the less or more attributes of the kegg object
+(the left most column above)
+```{r}
+pathview(gene.data = foldchanges, pathway.id = "hsa04110")
+```
+
+![](hsa04110.pathview.png)
+
+Lets do the first five pathways, automate this process
+```{r}
+#focus on 5 upregulated pathways
+keggrespathways <- rownames(keggRes$greater)[1:5]
+
+#lets get the first 8 characters as that is the pathwayID
+keggresids = substr(keggrespathways, start=1, stop=8)
+
+keggresids 
+
+```
+
+```{r}
+#generate the 5 pathways
+pathview(gene.data = foldchanges, pathway.id = keggresids)
+```
+
+![](hsa04640.pathview.png)
+
+![](hsa04142.pathview.png)
+![](hsa04630.pathview.png)
+![](hsa00140.pathview.png)
+![](hsa04330.pathview.png)
+
+
+
