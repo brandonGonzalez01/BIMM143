@@ -1,0 +1,150 @@
+---
+title: "Mini_Project"
+author: "Brandon Gonzalez"
+date: "February 7, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Open up the data file
+```{r}
+datafile = "data/WisconsinCancer.csv"
+wisc.df = read.csv(file=datafile,header=TRUE)
+head(wisc.df)
+```
+Convert the wisconsin dataframe to a matrix with only desired variables, discard id
+```{r}
+wisc.data <- as.matrix(wisc.df[,3:32])
+```
+assign row names using the ids of the original dataframe
+```{r}
+row.names(wisc.data) <- wisc.df$id
+```
+
+Set up a diagnosis vector, 1 = M, 0 if not
+
+```{r}
+table(wisc.df$diagnosis)
+diagnosis <- as.numeric(wisc.df$diagnosis == 'M')
+diagnosis[1:20]
+
+```
+
+Get the colnames with the "mean" suffix
+```{r}
+mean_indexes <- grep("_mean", colnames(wisc.data))
+length(mean_indexes)
+```
+Number of Malignant diagnosis:
+```{r}
+sum(diagnosis)
+```
+Lets see if we need to scale the values by checking means and stddev
+```{r}
+
+colMeans(wisc.data)
+
+```
+apply stddev function do each data column
+```{r}
+apply(wisc.data,2,sd)
+```
+
+```{r}
+wisc.pr <- prcomp(wisc.data, scale=TRUE)
+summary(wisc.pr)
+```
+We can see that PC1 accounts for 44 percent of the variance, PC2 is about 19%, up to the first four PCs we have about 80% of the total variance. 7 PC are required to get to 90% total variance.
+
+Lets plot PC1 and PC2. I add 1 to diagnosis because 0 will color as white. 
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2], col=(diagnosis+1) ,xlab = "PC1",ylab = "PC2")
+```
+Plot PC1 and PC3
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,3], col=(diagnosis+1) ,xlab = "PC1",ylab = "PC3")
+
+```
+
+###Variance captured in each PC
+
+Lets make a scree plot to identify if a natural elbow exist. Calculate the variance of each principal component 
+```{r}
+pr.var <- wisc.pr$sdev^2
+head(pr.var)
+pve <- round((pr.var / sum(pr.var)) * 100,1)
+barplot(pve,xlab = "PC Components", ylab = "Proportion of Variance Explained", names.arg=paste0("PC",1:length(pve)), axes=FALSE)
+axis(2, at=pve, labels=pve )
+```
+
+Lets plot something a little fancy
+```{r}
+library(factoextra)
+#fviz_eig: Extract and visualize the eigenvalues/variances of dimensions, this function will plot the PCs for you, very simple
+fviz_eig(wisc.pr, addlabels = TRUE)
+```
+
+### Hierarchical cluster of case data
+
+We need distance measures first before we cluster.
+```{r}
+#scale the data
+data.scales <- scale(wisc.data)
+#Calculate Euclidean distances
+data.dist <- dist(data.scales)
+wisc.hclust <- hclust(data.dist)
+wisc.hclust.centroid <- hclust(data.dist,method="centroid")
+wisc.hclust.complete <- hclust(data.dist,method="complete")
+wisc.hclust.average <- hclust(data.dist,method="average")
+wisc.hclust.single <- hclust(data.dist,method="single")
+
+
+```
+Plot and add line where there is 4 clusters.
+```{r}
+plot(wisc.hclust.single)
+plot(wisc.hclust.average)
+plot(wisc.hclust.complete)
+plot(wisc.hclust.centroid)
+abline(h=20,col="red",lty=2)
+```
+
+```{r}
+wisc.hclust.cluster <- cutree(wisc.hclust, k=4)
+table(wisc.hclust.cluster, diagnosis)
+```
+
+### Cluster based on PCA space
+
+PC1 vs PC2
+```{r}
+pca.dist <-  dist(wisc.pr$x[,1:2])
+pca.clust <- hclust(pca.dist, method="ward.D2")
+plot(pca.clust)
+pca.clust.cut3 <- cutree(pca.clust, k=3)
+table(pca.clust.cut3, diagnosis)
+```
+The output of table with cut3 and diagnosis shows there are no false positives in group 1 but there a are quite a few false negatives in group 3..
+```{r}
+plot(wisc.pr$x[,1],wisc.pr$x[,2],col=pca.clust.cut3, pch=diagnosis,xlab="PC1",ylab="PC2",main = "3 clustered PC1 vs PC2")
+```
+
+
+
+###Predictions
+Here we will import some new data and plot it
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+
+```
+Plot the new points in blue
+```{r}
+plot(wisc.pr$x[,1:2],col=diagnosis+1)
+points(npc[,1], npc[,2], col="blue", pch=16)
+```
+

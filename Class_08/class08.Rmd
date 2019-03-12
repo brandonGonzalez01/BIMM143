@@ -1,0 +1,180 @@
+---
+title: "KMeans and"
+author: "Brandon Gonzalez"
+date: "February 5, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Q- how many points are in each cluster?
+Q- What component of your result object details:
+   cluster size : 30
+   cluseter assignemtn/membership: kmns$cluster
+   cluster center: kmns$centers   
+plot x colored by the kmeans cluster assignment and add cluster centers as blue points
+
+```{r}
+tmp <- c(rnorm(30,-3), rnorm(30,3))
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+kmns <- kmeans(x, centers=2, nstart=5)
+```
+
+```{r}
+palette(c("red","blue","green"))
+plot(x, col=kmns$cluster )
+#plot centers of cluster
+points(kmns$centers, col="black",cex=2, pch=15 )
+
+#print summary of kmeans
+kmns
+
+```
+
+Dendrogram
+```{r}
+#First we need to calculate point similarity as the Euclidean distance between observations
+#dist_matrix is a special object that needs to be converted to a matrix before view
+dist_matrix <- dist(x)
+View(as.matrix(dist_matrix))
+#hclust returns a hierarchical clustering
+hc <- hclust(d = dist_matrix)
+plot(hc)
+abline(h=6,col="red")
+#Cutree returns cluster memebership at that height
+cutree(hc,h=6)
+#use k when you dont know what height to use but know # of clusters you want
+cutree(hc, k=2)
+cutree(hc, k=4)
+
+```
+**Different linkage methods**
+```{r}
+hc.average <- hclust(d = dist_matrix, method="average")
+plot(hc.average, main = "Average")
+
+hc.complete <- hclust(d=dist_matrix, method="complete")
+plot(hc.complete, main="Complete")
+
+hc.single <- hclust(d=dist_matrix, method = "single")
+plot(hc.single, main="Single")
+hc.single <- hclust(d=dist_matrix, method = "centroid")
+plot(hc.single, main="centroid")
+```
+
+```{r}
+# Step 1. Generate some example data for clustering
+x <- rbind(
+ matrix(rnorm(100, mean=0, sd = 0.3), ncol = 2), # c1
+ matrix(rnorm(100, mean = 1, sd = 0.3), ncol = 2), # c2
+ matrix(c(rnorm(50, mean = 1, sd = 0.3), # c3
+ rnorm(50, mean = 0, sd = 0.3)), ncol = 2))
+colnames(x) <- c("x", "y")
+# Step 2. Plot the data without clustering
+plot(x)
+# Step 3. Generate colors for known clusters
+# (just so we can compare to hclust results)
+col <- as.factor( rep(c("c1","c2","c3"), each=50) )
+plot(x, col=col, pch=15)
+```
+```{r}
+dist_matrix2 <- dist(x)
+
+hc2 <- hclust(d = dist_matrix2)
+plot(hc2)
+abline(h=2,col="red")
+abline(h=2.5,col="blue")
+#ets compare this cluster against the original from above
+clusters = cutree(hc2, k=3)
+plot(x, col=clusters, pch=15)
+
+clusters = cutree(hc2, k=2)
+plot(x, col=clusters,pch=15)
+```
+
+**PCA example**
+
+```{r}
+mydata <- read.csv("https://tinyurl.com/expression-CSV",
+ row.names=1)
+```
+
+```{r}
+#transpose data using t()
+pca <- prcomp(t(mydata),scale=TRUE)
+attributes(pca)
+#lets get the variance of the PCs
+pca.var <- pca$sdev^2
+#round the variance to 1 decimal point
+pca.var.per <- round(pca.var/sum(pca.var)*100, 1)
+#visualize the variance in PCs
+barplot(pca.var.per, main="Scree Plot",
+ xlab="Principal Component", ylab="Percent Variation")
+
+## A vector of colors for wt and ko samples
+colvec <- colnames(mydata)
+colvec[grep("wt", colvec)] <- "red"
+colvec[grep("ko", colvec)] <- "blue"
+
+#lets plot with pc1 being x axis as its the most important PC
+plot(pca$x[,1],pca$x[,2],xlab=paste("PC1(",pca.var.per[1],"%)"), ylab=paste("PC2(",pca.var.per[2],"%)"), col=colvec, pch=16)
+
+```
+
+```{r}
+uk_foods <- read.csv("UK_foods.csv")
+```
+
+```{r}
+#Set the names of the rows correctly
+dim(uk_foods)
+rownames(uk_foods) <- uk_foods[,1]
+uk_foods <- uk_foods[,-1]
+head(uk_foods)
+```
+```{r}
+#or simply read in teh data as so
+uk_foods <- read.csv("UK_foods.csv",row.names = 1)
+head(uk_foods)
+```
+
+
+```{r}
+pca <- prcomp(t(uk_foods))
+summary(pca)
+```
+
+```{r}
+colvec <- colnames(uk_foods)
+colvec[grep("Wales", colvec)] <- "red"
+colvec[grep("England", colvec)] <- "orange"
+colvec[grep("Scotland", colvec)] <- "blue"
+colvec[grep("N.Ireland", colvec)] <- "green"
+
+
+
+
+plot(pca$x[,1],pca$x[,2], xlab="PC1",ylab="PC2",col="grey")
+text(pca$x[,1],pca$x[,2],colnames(uk_foods),col=colvec)
+
+
+variance <- round( pca$sdev^2/sum(pca$sdev^2) * 100 )
+
+#we can see that most of the variance is accounted for in PC1 and PC2
+summary(pca)$importance
+pca
+```
+
+```{r}
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+barplot(pca$rotation[,2], las=2)
+biplot(pca)
+
+loadingscores <- pca$rotation[,1]
+summary(loadingscores)
+```
+

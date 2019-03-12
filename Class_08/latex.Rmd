@@ -1,0 +1,13 @@
+---
+title: "Individual HW3"
+author: "Brandon Gonzalez"
+date: "February 5, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+$latex
+1. a) True - every student starts with a piece of paper and their name on it.

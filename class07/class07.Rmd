@@ -1,0 +1,51 @@
+---
+title: "class07"
+author: "Brandon Gonzalez"
+date: "January 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Functions revisit
+
+
+```{r}
+source("http://tinyurl.com/rescale-R")
+```
+**Using error messages**
+
+```{r}
+rescale(c(1,5,10))
+```
+Watch it break
+```{r}
+rescale(c(1,5,10,"Hello"))
+
+```
+Use rescale2 and have it return and error message
+```{r}
+rescale2(c(1,5,10))
+rescale2(c(1,5,10,"Hello"))
+
+```
+
+```{r}
+na_vector <- c(NA, 3,4,.9,7,NA)
+na_vector2 <- c(NA,1,2,3,4,.9)
+na_indexes <- which(is.na(na_vector))
+na_indexes2 <- which(is.na(na_vector2))
+
+is.na(na_vector) & is.na(na_vector2)
+
+```
+Take code snippet and make it into a function
+```{r}
+both_na <- function(x, y){
+  sum(is.na(x) & is.na(y))
+}
+#lets test it
+both_na(na_vector,na_vector2)
+```
+

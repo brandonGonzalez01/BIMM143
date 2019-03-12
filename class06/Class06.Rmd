@@ -1,0 +1,82 @@
+---
+title: "class06"
+author: "Brandon Gonzalez"
+date: "January 24, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Class 6 work - reading files again
+
+We will be opening a couple of different files. We will use the fucntion **read.table()** and friends of it to read some example flat files.
+
+```{r} 
+table1 <- read.csv(file="./data_files/test1.txt", header = TRUE)
+table1
+  
+```
+
+```{r}
+table2 <- read.table(file="./data_files/test2.txt",header = TRUE, sep="$")
+table2
+```
+```{r}
+table3 <- read.table(file="./data_files/test3.txt", header = FALSE)
+table3
+ncol(table3)
+```
+## Section 2. R Functions
+
+Basic function structure:
+name.of.function <- function( arg1, arg2,...){
+  expr
+  return(something)
+}
+
+```{r}
+add <- function(x, y=1){
+  #y default value is 1, optional arg
+  x + y
+}
+
+x <- 1
+#using this function:
+add(x, y=100)
+add(x)
+add(c(1,2,3))
+add(c(1,2,3),4)
+```
+
+```{r}
+rescale <-function(x, na.rm=TRUE){
+  rng <- range(x, na.rm = na.rm)
+  x <- (x - rng[1]) / (rng[2] - rng[1])
+  return(x)
+}
+
+x = 1:10
+rescale(x)
+```
+
+```{r}
+rescale3 <- function(x, na.rm=TRUE, plot=FALSE) {
+ rng <-range(x, na.rm=na.rm)
+ print("Hello")
+ answer <- (x - rng[1]) / (rng[2] - rng[1])
+ print("is it me you are looking for?")
+ if(plot) {
+ plot(answer, typ="b", lwd=4)
+ }
+ print("I can see it in ...")
+ return(answer)
+}
+
+```
+
+```{r}
+rescale3(c(1:15,NA,10))
+```
+

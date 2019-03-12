@@ -1,0 +1,51 @@
+---
+title: "Making a plotting function, HW class 06"
+author: "Brandon Gonzalez"
+date: "January 27, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Makaing a plotting function for using bio3d
+
+
+
+```{r}
+#load bio3d package
+library(bio3d)
+#lets make a function that will plot Bfactor of sub structure of a protien
+
+#This function plots a protien with bio3d package, call this with the the follwoing paramters:
+# @parameter x, this is the name of the PDB protein to be read
+# @Parameter chain, the chain of the pdb to be inspected,optional
+# @parameter elety, the character vector of atom names, optional
+# @parameter ylab, a string that represents the ylabel, optional
+#@returns: nothing
+# side effects: prints out plot of protein drug interaction 
+plot_fun <- function(x, chain = "A", elety = "CA", ylab=""){
+  #chain and elety are set as optional parameters but can be changed
+ s1 <- read.pdb(x)
+ #trim gets a subset of atoms of the s1 pdb protein
+ s1.chainA <- trim.pdb(s1, chain = chain, elety = elety)
+ s1.b <- s1.chainA$atom$b
+ plotb3(s1.b,sse=s1.chainA,typ="l",main=x,ylab=ylab)
+}
+
+```
+##Using the function
+```{r}
+
+#proteins we will use
+protein_list <- c("4AKE","1AKE","1E4Y")
+
+#for each call the function
+for (pro in protein_list) {
+  plot_fun(pro,ylab="BFactor")
+}
+```
+
