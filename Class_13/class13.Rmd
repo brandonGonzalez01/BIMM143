@@ -1,0 +1,119 @@
+---
+title: "Class13 Docking and CADD"
+author: "Brandon Gonzalez"
+date: "February 19, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r}
+#Include library3d package
+library(bio3d)
+#get HIV pdb(get.pdb() downloads the hsg file locally) and read it.
+file.name <- get.pdb("1hsg")
+hiv <- read.pdb(file.name)
+#lets print a quick summary
+hiv
+```
+There are two non-protein residues: Water as HOH, MK1 merck's HIV drug. So this means we have to do some preprocssing to extract the protein atoms only.
+```{r}
+#trim the pdb files 
+prot <- trim.pdb(hiv, "protein")
+ligand <- trim.pdb(hiv, "ligand")
+#save the trimmed file
+write.pdb(prot,file="1hsg_protein.pdb")
+write.pdb(ligand, file="1hsg_lignad.pdb")
+```
+##**VMD and MGL**
+From the pdb files above we then used MGL to add hydrogens and calculate charges of the protein. We also used MGL to find Hydrogen bonding hydrogens and rotatble bonds of the ligand. These files were saved as *.pdbqt files.
+
+*1.5 Prepare a docking configuration file*
+"Before we can perform the actual docking, we need to create an input file that defines the
+protein, ligand and the search parameters." I will specify the protein and ligands to dock in this config file using
+a text editor. The centers and sizes are set from the parameters used in MGL viewer's ***box*** 
+"looks something like the following:
+receptor = 1hsg_protein.pdbqt
+ligand = ligand.pdbqt
+num_modes = 50
+out = all.pdbqt
+center_x = XX
+center_y = XX
+center_z = XX
+size_x = XX
+size_y = XX
+size_z = XX
+seed = 2009"
+
+### Docking using The Scripps Research Institute's Vina
+Cmd - "\Program Files (x86)\The Scripps Research Institute\Vina\vina.exe" --
+config config.txt --log log.txt" this docks the ligand and protein and outputs a file called all.pdbqt that can now be viewed in R using bio3d
+
+### Inspecting docked results
+
+```{r}
+#multi = true becasue there are multiple positions of the same ligand
+res <- read.pdb("all.pdbqt",multi=TRUE)
+write.pdb(res,"results.pdb")
+
+```
+![Docking Results from Vina in Red compared to original pdb file viewed in VMD.](./docking2_vina_in_red.jpg)
+
+Qualitatively these results look really good, the first result and the PDB file are almost exactly on top of each other. 
+
+## How do we quantitavely compare the docking results?
+ we will calculate the RMSD of the docking result and the PDB 
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+rmsd(ligand, res)
+
+
+#lets get the rmsd of non-hydrogen atoms
+noh_ori.inds <- atom.select(ligand, string = "noh")
+noh_res.inds <-  atom.select(res, string="noh")
+
+noh_ori <- trim(ligand, inds=noh_ori.inds)
+noh_res <- trim(res, inds=noh_res.inds)
+
+plot(rmsd(noh_ori, noh_res), type = "l",ylab="RMSD",main="RMSD of no hydrogen atoms")
+
+
+df_rmsd <- data.frame(rmsd(noh_ori, noh_res),rmsd(ligand,res))
+```
+```{r}
+
+```
+
+##Proteins are flexible
+
+The hiv protease example ignored these rules, here I will show an example of protein flexibility.
+```{r}
+pdb <- read.pdb("1HEL")
+
+m <- nma(pdb)
+#higher the fluctuation means more flexible the protien is
+plot(m)
+```
+
+
+
+```{r}
+#the out put file can be loaded into VMD and then rendered as a movie
+mktrj(m , mode=7, file="nma_7.pdb")
+```
+
+Video: https://www.youtube.com/watch?v=xPTUAp6d5eg)
+
+
+

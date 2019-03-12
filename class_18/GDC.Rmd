@@ -1,0 +1,37 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Stuff
+```{r}
+
+cases_by_project <- cases() %>%
+  facet("project.project_id") %>%
+  aggregations()
+head(cases_by_project)
+```
+
+```{r}
+x <- cases_by_project$project.project_id
+colorvec <- rep("lightblue", nrow(x))
+colorvec[x$key == "TCGA-PAAD"] <- "red"
+
+```
+```{r}
+colorvec
+```
+
+```{r}
+barplot(x$doc_count, names.arg=x$key, log="y", col=colorvec, las=2)
+
+```
+
+```{r}
+
+```
+

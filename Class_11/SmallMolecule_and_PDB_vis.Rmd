@@ -1,0 +1,65 @@
+---
+title: "Structural_Bio"
+author: "Brandon Gonzalez"
+date: "February 14, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Read in the data
+```{r}
+protein_data <- read.csv(header=TRUE,file = "Data_Export_Summary.csv")
+protein_df <- as.matrix(protein_data[2:6])
+rownames(protein_df) <- protein_data$Experimental.Method
+                        
+```
+
+#Lets determine the percentage of structures solved by X-Ray and Electron Microscopy
+```{r}
+protein_amounts <- protein_df[ ,"Proteins" ]
+percents <- round(protein_df[,"Total"]/ sum(protein_df[,"Total"]),3)
+names(percents) <- rownames(protein_df)
+percents
+percent_protein = round((sum(protein_df[,"Proteins"])/sum(protein_data$Total)),2)
+barplot(height = protein_amounts, names.arg = rownames(protein_amounts), main = "Proteins", xlab = percent_protein)
+
+
+```
+The data base is 93% proteins with most of the proteins elucidated from X-Ray crystallography
+
+##Bio3d
+```{r}
+library(bio3d)
+
+```
+#lets read HSG1 pdb, print out a summary
+A pdb file contains atoms with their xyz coordinates at the most basic sense.
+```{r}
+hsg_pdb <- read.pdb("1hsg")
+print(hsg_pdb)
+```
+We can see from the summary that there are 1514 atoms in the protein with a total of 198 residues, 172 atoms in non-protein,2 non protein reisdues: 1 MK1(merk1 drug) and 127 waters (HOH).
+```{r}
+#this wil print out the atom col, but it also tells us that its a dataframe
+#str(pdb$atom) 
+
+#print summary of coordinate data
+hsg_pdb$xyz
+```
+
+```{r}
+#select only protein atoms, and then only mk1. Then write as new pdb files
+p.inds <- atom.select(hsg_pdb,"protein")
+mk1.inds <- atom.select(hsg_pdb,"ligand")
+
+p.trimmed <- trim(hsg_pdb, inds=p.inds)
+mk1.trimmed <- trim(hsg_pdb, inds=mk1.inds)
+
+  
+write.pdb(pdb=p.trimmed, file = "Protein_only.pdb")
+write.pdb(pdb=mk1.trimmed, file = "Mk1_only.pdb")
+```
+
+

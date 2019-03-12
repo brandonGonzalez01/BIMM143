@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Language" content="en-us">
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <meta http-equiv="Content-Style-Type" content="text/css">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <title>404 error</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+
+</head>
+
+<body style="background-color:#c0c0c0;">
+
+<div style="position:absolute; top:10px; left:20px; width:850px; height:24px;" >
+   <span class="NavButtonPara"><a class="NavButton" href="/">Home</a></span>
+   <span class="NavButtonPara"><a class="NavButton" href="/software.html">Software</a></span>
+   <span class="NavButtonPara"><a class="NavButton" href="/services.html">Services</a></span>
+   <span class="NavButtonPara"><a class="NavButton" href="/about.html">About</a></span>
+   <span class="NavButtonPara"><a class="NavButton" href="/contact.html">Contact</a></span>
+</div>
+
+<div style="position:absolute; top:40px; left:20px; width:850px; height:100px;" >
+  <img alt="404 error" src="/missing_banner.jpg">
+</div>
+
+<div style="position:absolute; top:140px; left:20px; width:830px; background-color:#ffffff; border-width:10px; border-style:solid;border-color:white;" class="ManText">
+
+	<br><span class="ManText">Sorry about that. Most likely, you were trying to access an 
+	obsolete page in the manual. Try going to the </span>
+	<a href="https://drive5.com/usearch/manual">USEARCH documentation
+	home page</a><span class="ManText"> and browsing from there. <a href="/contact.html">Send 
+	me an email</a> if you can't find what you need.<br>&nbsp; </span> 
+</div>
+</body>
+</html>

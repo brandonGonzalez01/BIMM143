@@ -1,0 +1,194 @@
+---
+title: "RNA Seq Analysis of Hines et al."
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Importing countData and colData
+```{r}
+
+counts <- read.csv("data/airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <- read.csv("data/airway_metadata.csv", stringsAsFactors = FALSE)
+
+```
+## Preview of data
+```{r}
+head(counts)
+
+```
+```{r}
+head(metadata)
+```
+
+### The colnames of the counts data must match the ids of the metadata for DESeq2 to work 
+```{r}
+#the colnames must mat
+colnames(counts)
+```
+
+```{r}
+#all() checks that everything returned is TRUE or else it will return false, lets use this to check that the Ids match
+all( colnames(counts)[-1] == metadata$id )
+
+```
+
+### Lets find out which columns in *counts* are the control conditions.
+Then we find out what is the mean of count value for each gene.
+
+```{r}
+cntrl.inds = metadata$dex == "control"
+#get the ids of the cntrl cells
+cntrl.ids <- metadata$id[cntrl.inds]
+
+#get only the cntrl cells from the counts matrix
+cntrl.matrix <- counts[cntrl.ids]
+```
+
+```{r}
+head(cntrl.matrix)
+```
+
+
+```{r}
+mean <- rowSums(cntrl.matrix) / length(cntrl.matrix)
+#ncol(cntrl.matrix) also gives the length # of columns
+cntrl.means <- rowMeans(cntrl.matrix)
+all( cntrl.means == mean )
+names(cntrl.means) <- counts$ensgene 
+cntrl.means[1:10]
+```
+
+## Lets do the same thing for the *treated* cells
+```{r}
+treated.inds = metadata$dex == "treated"
+
+treated.ids <- metadata$id[treated.inds]
+
+#get only the treated cells from the conts matrix
+treated.matrix <- counts[treated.ids]
+```
+```{r}
+treated.means <- rowMeans(treated.matrix)
+names(treated.means) <- counts$ensgene
+treated.means[1:10]
+```
+Combine the means into one df
+```{r}
+meanCounts <- data.frame(cntrl.means, treated.means)
+colSums(meanCounts)
+```
+
+
+Now plot the means to see if there is any scatter, if there is that means the drug is having an effect on the RNA expression levels
+```{r}
+#bad plot, we should use a log plot!
+plot(meanCounts)
+```
+```{r}
+plot(meanCounts, log="xy")
+```
+
+To find what genes to look at lets see what the differences are in log means.
+```{r}
+#log2foldchange is used for its mathematical purposes, negative value means expression went down, positive means up.
+meanCounts$log2fc <- log2(meanCounts[ ,"cntrl.means"]/meanCounts[ ,"treated.means"])
+head(meanCounts)
+```
+
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+logplot <- ggplot(meanCounts, aes(x=cntrl.means, y = treated.means)) +geom_point()
+logplot + scale_x_continuous(trans = "log2") + scale_y_continuous(trans = "log2")
+```
+Back to meanCounts. We should remove genes with NaN and inf means.
+
+```{r}
+toy <- meanCounts[1:6,]
+which(toy[ ,1:2] == 0, arr.ind = TRUE )
+#lets see if those values correspond correctly
+```
+
+```{r}
+zero.vals <- which(meanCounts[ ,1:2] == 0, arr.ind = TRUE )
+to.rm <- unique(zero.vals[,1])
+myCounts <- meanCounts[-to.rm, ]
+head(myCounts)
+```
+
+lets remove those 
+```{r}
+up.inds <- myCounts$log2fc > 2
+down.inds <- myCounts$log2fc <(-2)
+sum(up.inds)
+sum(down.inds)
+```
+The amount of upregulated genes is `sum(up.inds)` and downregulated genes are `sum(down.inds)`
+
+## Adding annotation data
+```{r}
+annotations <- read.csv("data/annotables_grch38.csv")
+head(annotations)
+```
+### Use **merge()** to merge annotation data with *myCounts*
+```{r}
+myCounts.annotated <- merge(x=myCounts, y=annotations, by.x="row.names",by.y="ensgene")
+head(myCounts.annotated)
+```
+
+
+## Using DESeq2
+To do some proper analysis with statistical backing, p-values!
+```{r}
+library(DESeq2)
+```
+
+```{r}
+#DESeq2 is driven by the DESeq2DataSet object
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = metadata, design = ~dex, tidy = TRUE)
+```
+```{r}
+dds <- DESeq(dds)
+```
+
+```{r}
+res <- results(dds)
+res
+```
+
+```{r}
+summary(res)
+```
+
+Volcano plot helps show the genes that are signficantly changing
+```{r}
+#set all to gray
+myColors <- rep("gray", nrow(res))
+#set genes with l2fc greater than 2 to color red
+myColors[abs(res$log2FoldChange)>2] <- "red"
+#set the significant values to blue
+colinds <- res$padj < 0.02 & abs(res$log2FoldChange) > 2
+myColors[colinds] <- "blue"
+#wnat the negativ love of p values, -log(res$padj) because p values are close together, negative so that the values are go in the positive Y direction
+plot(res$log2FoldChange, -log(res$padj), col=myColors, ylab="-Log(P)", xlab="Log2FoldChange") 
+```
+lets use ggplot
+```{r}
+res$sig <- res$padj < 0.05 
+ggplot(as.data.frame(res), aes(log2FoldChange, -1*log10(pvalue), col=sig)) + 
+    geom_point() + ggtitle("Volcano plot")
+
+#ggplot(as.data.frame(res) convert to dataframe 
+#the values wanted to be used : aes(log2FoldChange, -1*log10(pvalue)) 
+#color based on significance : col=sig)
+```
+
+```{r}
+
+```
+

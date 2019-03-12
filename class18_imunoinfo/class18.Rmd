@@ -1,0 +1,92 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+```{r}
+library(bio3d)
+```
+
+```{r}
+sequences <- read.fasta(file = 'data/lecture18_sequences.fa')
+
+```
+```{r}
+sequences
+```
+
+```{r}
+library(muscle)
+```
+
+
+```{r}
+#muscle executable must be in curr working directory, align files
+seqAln <- seqaln(sequences)
+seqAln
+```
+```{r}
+identities <- conserv(seqAln$ali, method="identity")
+identities
+```
+
+```{r}
+mutant.sites <- which(identities < 1)
+mutant.sites
+```
+Lets remove gaps
+```{r}
+gap.inds <- gap.inspect(seqAln)
+```
+```{r}
+gap.inds
+```
+
+```{r}
+mutant.sites <- mutant.sites[mutant.sites %in% gap.inds$f.inds]
+mutant.sites
+```
+
+```{r}
+## Make a "names" label for our output sequences (one per mutant)
+mutant.names <- paste0(seqAln$ali["P53_wt",mutant.sites],
+                       mutant.sites,
+                       seqAln$ali["P53_mutant",mutant.sites])
+
+mutant.names
+```
+
+```{r}
+start.position <- mutant.sites - 8
+start.position
+```
+
+```{r}
+stop.postion <- mutant.sites + 8
+```
+```{r}
+store.seqs <- matrix('-', nrow = length(mutant.sites), ncol=17)
+store.seqs
+
+```
+```{r}
+row.names(store.seqs) <- mutant.names
+```
+
+```{r}
+for(i in 1:length(mutant.sites)) {
+  store.seqs[i,] <- seqAln$ali["P53_mutant",start.position[i]:stop.postion[i]]
+}
+
+print(store.seqs)
+```
+
+```{r}
+write.fasta(seqs=store.seqs,file="seqs_mhc.fa")
+```
+

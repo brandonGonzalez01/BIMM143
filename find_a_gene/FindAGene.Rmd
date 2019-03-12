@@ -1,0 +1,112 @@
+---
+title: "Find_A_Gene"
+author: "Brandon Gonzalez"
+date: "February 24, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(bio3d)
+filename = "data/muscle_alignment"
+```
+
+```{r}
+alignment = read.fasta(filename)
+
+```
+
+
+```{r}
+plot.fasta(alignment, hc=TRUE)
+```
+
+```{r}
+seqMatrix <- seqidentity(alignment)
+heatmap(seqMatrix)
+```
+
+```{r}
+heatmap(seqMatrix, cexRow = .7, cexCol = .5, margins = c(8,2))
+#par(mai=c(2,2,0,2),pin=c(1,4.4))
+
+```
+
+
+Lets get a consensus from the alignment, the default cutoff identity value is 0.6.
+With this consensus sequence I will then query pdb to find protein structures that are similar. 
+```{r}
+con <- consensus(alignment)
+print(con$seq[1:50])
+```
+
+```{r}
+pdbs <- blast.pdb(seq=con$seq)
+
+```
+Lets see the first 5 hits.
+```{r}
+pdbs$hit.tbl[1:5,]
+#lets get the first 3 hits and get look them up on PDB database
+selectedPdbs <- pdbs$hit.tbl[1:3,]
+ids <- selectedPdbs$pdb.id
+```
+
+```{r}
+annotated <- pdb.annotate(ids, unique = TRUE)
+annotated
+```
+```{r}
+pdb_df <- data.frame(annotated$experimentalTechnique,annotated$resolution, annotated$source, selectedPdbs$evalue, selectedPdbs$identity)
+#pdb_df <- rownames(annotated$structureId)
+pdb_df
+```
+
+Based on these results, I am a little  uncomfortable using these proteins because they arent as from a family as related as I want. I will do the heat map, consensus, and PDB query again.
+
+```{r}
+filename = "data/muscle_alignmentNoH"
+
+alignment2 <- read.fasta(filename)
+mtrix <- seqidentity(alignment2)
+heatmap(mtrix, cexRow = .7, cexCol = .5, margins = c(8,2))
+```
+```{r}
+con <- consensus(alignment2)
+print(con$seq[1:50])
+```
+
+```{r}
+#look up PDBS
+pdbs <- blast.pdb(seq=con$seq)
+#only want the first three again
+selectedPdbs <- pdbs$hit.tbl[1:3,]
+ids <- selectedPdbs$pdb.id
+
+annotated <- pdb.annotate(ids, unique = TRUE)
+
+```
+
+### Looks like they are the same proteins, thats good then, these results mean theyre independent of methodology and that give me much more confidence in them.
+
+```{r}
+pdb_df <- data.frame(annotated$experimentalTechnique,annotated$resolution, annotated$source, selectedPdbs$evalue, selectedPdbs$identity)
+row.names(pdb_df) <- ids
+pdb_df
+```
+To visualize in VMD, download the PDBs locally and open them up.
+
+```{r}
+#Download pdb files locally
+
+#get.pdb(ids)
+```
+
+```{r}
+
+```
+

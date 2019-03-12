@@ -1,0 +1,170 @@
+---
+title: "Pathway Analysis"
+author: "Brandon Gonzalez"
+date: "February 28, 2019"
+output: html_document
+---
+# 	A microRNA network regulates expression and biosynthesis of CFTR and CFTR-ΔF508.
+Ramachandran S, Karp PH, Jiang P, Ostedgaard LS et al. A microRNA network regulates expression and biosynthesis of wild-type and DeltaF508 mutant cystic fibrosis transmembrane conductance regulator. Proc Natl Acad Sci U S A 2012 Aug 14;109(33):13362-7. PMID: 22853952
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+#source
+#biocLite("GEOquery")
+#biiocLite("Biobase")
+library(Biobase)
+library(GEOquery)
+library(limma)
+library(DESeq2)
+```
+
+Open up the GEO file *even if it is compressed*
+```{r}
+gds4255 <- getGEO(filename='data/GDS4255_full.soft.gz', AnnotGPL = TRUE)
+```
+##Lets look at the GDS object from the GEO entry
+There are two main things the GDS object gives us, meta data and a table for expression. From class 16 we recall that the DESeq2 workflow requires two tables, metaData table and the countData table, however expression data is different from count data..
+```{r}
+Meta(gds4255)
+```
+```{r}
+Table(gds4255)[1:10, ]
+```
+```{r}
+eset <- GDS2eSet(gds4255, getGPL= FALSE)
+
+pData(eset)
+```
+gds4255
+
+```{r}
+Meta(gds4255)$sample_count
+Meta(gds4255)$sample_organism
+```
+
+```{r}
+gdsTable <- Table(gds4255)
+colnames(gdsTable)
+```
+
+```{r}
+row.names(gdsTable) <- gdsTable[,1]
+head(gdsTable)
+```
+
+```{r}
+eset <- GDS2eSet(gds4255, getGPL = FALSE)
+malist <- GDS2MA(gds4255)
+```
+Lets see that we have the 12 expected samples
+```{r}
+sampleNames(eset)
+```
+
+```{r}
+head(malist$M)
+head(malist$A)
+```
+
+```{r}
+ourData <- malist$M
+row.names(ourData) <- gdsTable$ID_REF
+head(ourData)
+```
+
+
+
+```{r}
+pData(eset)[1:9,]
+```
+
+```{r}
+design <- Columns(gds4255)[,1:3]
+design <- design[1:9,]
+design
+```
+```{r}
+conDesign <- rep(0,length(design[,2]))
+conDesign[design[,2] != "control"] = 1
+conDesign
+```
+
+
+
+```{r}
+dim(ourData)
+subsetData <- ourData[,1:9]
+dim(subsetData)
+```
+
+```{r}
+fit <- lmFit(subsetData,conDesign)
+
+```
+```{r}
+fit <- eBayes(fit)
+```
+
+```{r}
+volcanoplot(fit)
+```
+
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+```
+
+
+```{r}
+genesOfInterest <- topTable(fit,number=100)
+genesOfInterest$ID_REF <- row.names(genesOfInterest)
+
+```
+```{r}
+genesOfInterest[1:20 , ]
+```
+
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+```{r}
+columns(org.Hs.eg.db)
+```
+```{r}
+IdRefs <- row.names(genesOfInterest)
+IdRefs
+```
+```{r}
+geneTable <- gdsTable[IdRefs, ]
+geneTable
+```
+
+Load up some pathways
+```{r}
+data("kegg.sets.hs")
+```
+
+## Assigning entrez IDs to the genesOfInterst.
+
+lets take a peak at the original GEO data that we downloaded and see how the genes are IDd
+```{r}
+Table(gds4255)[1:20,]
+```
+It seems like geneBank ascenison is the only identifiers that is present for all the entries. Lets double check.
+
+```{r}
+Table(gds4255)$`GenBank Accession`
+```
+
+
+gage() takes a vector of named logfoldchanges and a set of pathways you want to compare over 
+
+```{r}
+gage(genesOfInterest$logFC
+
+```
+

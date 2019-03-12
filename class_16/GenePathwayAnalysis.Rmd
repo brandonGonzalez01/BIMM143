@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Pathway 
 The expression data comes from GEO entry GSE37704, which is associated with the following publication:
 
-Trapnell C, Hendrickson DG, Sauvageau M, Goff L et al. ‚ÄúDifferential analysis of gene regulation at transcript resolution with RNA-seq‚Äù. Nat Biotechnol 2013 Jan;31(1):46-53. PMID: 23222703
+Trapnell C, Hendrickson DG, Sauvageau M, Goff L et al. ÄúDifferential analysis of gene regulation at transcript resolution with RNA-seqÄù. Nat Biotechnol 2013 Jan;31(1):46-53. PMID: 23222703
 
 They reported knockdown of HOX1a changes many thousands of transcript's expression levels.
 set the filenames and open
