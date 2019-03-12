@@ -1,6 +1,10 @@
 # BIMM143 
-Repo for BIMM143 class.
+Repository for my BIMM143 class.
 
-This is a store of my class-work for BIMM143 at UCSD. 
+Here is the [website](https://brandongonzalez01.github.io/BIMM143_WI19/), also check my [personal website](https://brandongonzalez01.github.io/) for more projects.
 
-Included is my find-a-gene assignment.
+## Contents
+
+Class 04 -
+Class 05 -
+Class 06 - 
