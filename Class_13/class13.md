@@ -127,10 +127,10 @@ m <- nma(pdb)
 ```
 
     ##  Building Hessian...     Done in 0.02 seconds.
-    ##  Diagonalizing Hessian...    Done in 0.11 seconds.
+    ##  Diagonalizing Hessian...    Done in 0.08 seconds.
 
 ``` r
-#higher the frequency means more flexible the protien is
+#higher the fluctuation means more flexible the protien is
 plot(m)
 ```
 
@@ -141,4 +141,4 @@ plot(m)
 mktrj(m , mode=7, file="nma_7.pdb")
 ```
 
-![](https://www.youtube.com/watch?v=Plcyi5KvCl8)
+Video: <https://www.youtube.com/watch?v=xPTUAp6d5eg>)

@@ -2,7 +2,7 @@
 title: "Class13 Docking and CADD"
 author: "Brandon Gonzalez"
 date: "February 19, 2019"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}

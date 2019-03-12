@@ -43,9 +43,6 @@ Lets remove gaps
 ```{r}
 gap.inds <- gap.inspect(seqAln)
 ```
-```{r}
-gap.inds
-```
 
 ```{r}
 mutant.sites <- mutant.sites[mutant.sites %in% gap.inds$f.inds]
